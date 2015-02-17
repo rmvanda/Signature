@@ -1,82 +1,86 @@
 <?php
 
-class Signature
-{
+	class Signature
+	{
 
-    private static $captureForm;
-    private static $opts;
+		private static $captureForm, $signeeId;
+		private static $opts;
 
-    public function __get($property)
-    {
+		public function __get($property)
+		{
 
-    }
+		}
 
-    public static function capture()
-    {
+		public static function capture()
+		{
+			self::loadConfig();
+			include __DIR__ . "/views/captureForm.php";
+		}
 
-        self::verifyInstallation();
+		private static function loadConfig()
+		{
+			self::$opts = file_get_contents(__DIR__ . "/configs/signature-options.json");
+		}
 
-        if (defined(SIGNATURE_CAPTURE_OPTS)) {
-            self::$opts = json_encode(unserialize(SIGNATURE_CAPTURE_OPTS), JSON_PRETTY_PRINT);
-        } else {
-            self::$opts = json_encode(array(
-                "minWidth" => .1,
-                "maxWidth" => 5,
-                "penColor" => "rgb(40,40,40)",
-                "backgroundColor" => "rgb(255,255,255)",
-                "onEnd" => 'function(){ $("#signatureCapture > button").removeAttr("disabled");)}',
-            ));
-        }
+		/*	private static function instantiate()
+		 {
+		 if (!self::$instance) {
+		 self::$instance = new self;
+		 }
+		 return self::$instance;
+		 }*/
 
-        include DATA_PATH . "Signatures/captureForm.php";
-        //		echo self::$captureForm ? : self::$captureForm =
-        // file_get_contents(DATA_PATH . "Signatures/captureForm.php");
-    }
+		public static function saveSignature($signature, $signee = null, $id = null)
+		{
 
-    public static function saveSignature($id = null, $signee = null, $signature)
-    {
+			if (!$id && !$signee && !$_POST['sid']) {
+				die("Signee and Signee ID cannot both be null - ");
+			}
 
-        if (!$id && !$signee) {
-            die("Signee and Signee ID cannot both be null - ");
-        }
+			try {
+				file_put_contents(DATA_PATH . "Signatures/" . $id . $signee . "_signature.png.base64", $signature);
+			} catch(Exception $e) {
+				$return['error'] = "An error occurred - contact the admin & try again, or simply revert to good ol' pen & paper";
+				$return['status'] = "error";
+			}
+			$return['message'] = "Signature Saved Successfully";
+			$return['status'] = $return['status'] ? : "success";
+			echo json_encode($return);
 
-        try {
-            file_put_contents(DATA_PATH . "Signatures/" . $id . $signee . "sig", $signature);
-        } catch(Exception $e) {
-            echo "An error occurred - contact the admin & try again, or simply revert to good ol' pen & paper";
-        }
-        echo "Signature Saved Successfully ";
+		}
 
-    }
+		public function test()
+		{
+			self::capture();
+		}
 
-    private static function verifyInstallation()
-    {
+		public function process()
+		{
+			Signature::saveSignature(filter_var($_POST['signeeId'], FILTER_VALIDATE_INT), filter_var($_POST['signee'], FILTER_SANITIZE_STRING), $_POST['signature']);
 
-        if (!defined(DATA_PATH)) {
-            define("DATA_PATH", "./");
-        }
+		}
 
-    }
+		public function loadSignature()
+		{
 
-    public function process()
-    {
-        Signature::saveSignature(filter_var($_POST['signeeId'], FILTER_VALIDATE_INT), filter_var($_POST['signee'], FILTER_SANITIZE_STRING), $_POST['signature']);
+		}
 
-    }
+		protected function updateAssets()
+		{
+			$updateSite = "https://github.com/szimek/signature_pad/archive/master.zip";
+		}
 
-    public function loadSignature()
-    {
+		public function deleteSignature()
+		{
 
-    }
+		}
 
-    protected function updateAssets()
-    {
-        $updateSite = "https://github.com/szimek/signature_pad/archive/master.zip";
-    }
+		public function js()
+		{
+			header("Content-Type: application/javascript");
+			$script = file_get_contents(__DIR__ . "/www/js/signature_pad/signature_pad.js");
+			$script .= file_get_contents(__DIR__ . "/www/js/signature_pad/signature_pad_wrapper.js");
+			echo $script;
+		}
 
-    public function deleteSignature()
-    {
-
-    }
-
-}
+	}

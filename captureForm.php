@@ -1,1 +1,0 @@
-<script src="/assets/js/libs/signature_pad/signature_pad.js"></script><canvas></canvas><label>Name of Signee:<input id="signee" type="text" name="signee"/></label><input name="signeeId" type="hidden" value="<?=$_SESSION['uid'] ?> "<div id="signatureCapture" class="buttons"><button>Save</button><button>Clear</button></div><script>signatureOps = <?= self::$opts ?> </script>
